@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Clients\CoinbaseClient;
-use App\Models\CoinbaseSpotPrice;
+use App\Clients\GeminiClient;
+use App\Models\GeminiSpotPrice;
 use Illuminate\Http\Request;
 
-class CoinbasePriceController extends Controller
+class GeminiPriceController extends Controller
 {
     /**
      * Number of minutes to cache price data before hitting API again
@@ -15,10 +15,10 @@ class CoinbasePriceController extends Controller
 
     public function index()
     {
-        $client = new CoinbaseClient();
+        $client = new GeminiClient();
         
         // Check if we need to save a new price (only if 5+ minutes since last save)
-        $recentPrice = CoinbaseSpotPrice::getRecent(self::CACHE_MINUTES);
+        $recentPrice = GeminiSpotPrice::getRecent(self::CACHE_MINUTES);
         if (!$recentPrice) {
             // Fetch from API and save (always saves when hitting API)
             $recentPrice = $client->fetchAndSave();
@@ -27,21 +27,21 @@ class CoinbasePriceController extends Controller
         // Get current spot price for display (use saved price if available, otherwise fetch fresh)
         $spot = null;
         if ($recentPrice) {
-            $spot = $recentPrice->amount;
+            $spot = $recentPrice->last;
         } else {
             // Fallback: fetch without saving if save failed but API works
             $spotData = $client->fetch();
-            $spot = $spotData['data']['amount'] ?? null;
+            $spot = $spotData['last'] ?? null;
         }
 
         // Get price records from the last 24 hours
-        $result = CoinbaseSpotPrice::where('created_at', '>=', now()->subDay())
+        $result = GeminiSpotPrice::where('created_at', '>=', now()->subDay())
             ->latest()
             ->get();
 
         // Format the data for display
         $result->each(function ($item, $key) {
-            $item->price_description = '$' . number_format($item->amount, 2);
+            $item->price_description = '$' . number_format($item->last, 2);
             
             // The created_at is stored in America/Detroit timezone in the database as a string
             // Get the raw string value
@@ -60,12 +60,12 @@ class CoinbasePriceController extends Controller
         });
 
         // Calculate average and difference
-        $average = $result->isNotEmpty() ? $result->pluck('amount')->average() : 0;
+        $average = $result->isNotEmpty() ? $result->pluck('last')->average() : 0;
         $diff_from_average = $result->isNotEmpty() && $result->first() 
-            ? $result->first()->amount - $average 
+            ? $result->first()->last - $average 
             : 0;
 
-        return view('price-history.coinbase-index', [
+        return view('price-history.gemini-index', [
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,

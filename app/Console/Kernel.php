@@ -25,6 +25,15 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+        
+        // Schedule Coinbase price fetch every 30 minutes
+        $schedule->command('coinbase:fetch-price')->everyThirtyMinutes();
+        
+        // Schedule Gemini price fetch every 30 minutes
+        $schedule->command('gemini:fetch-price')->everyThirtyMinutes();
+        
+        // Schedule Binance price fetch every 30 minutes
+        $schedule->command('binance:fetch-price')->everyThirtyMinutes();
     }
 
     /**
