@@ -52,11 +52,12 @@ class BinancePriceController extends Controller
             // Parse the date string as America/Detroit timezone
             $detroitTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $dateString, 'America/Detroit');
             
+            // Format the date string for display BEFORE changing timezone (format in Detroit time)
+            $item->date = $detroitTime->toDayDateTimeString();
+            
             // Convert to UTC timestamp for Highcharts
             // Highcharts will convert this UTC timestamp to the browser's local timezone for display
             $item->timestamp = $detroitTime->setTimezone('UTC')->timestamp * 1000;
-            
-            $item->date = $detroitTime->toDayDateTimeString();
         });
 
         // Calculate average and difference

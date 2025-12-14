@@ -27,13 +27,22 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')->hourly();
         
         // Schedule Coinbase price fetch every 30 minutes
-        $schedule->command('coinbase:fetch-price')->everyThirtyMinutes();
+        $schedule->command('coinbase:fetch-price')
+            ->everyThirtyMinutes()
+            ->appendOutputTo(storage_path('logs/scheduler.log'))
+            ->emailOutputOnFailure(env('ADMIN_EMAIL'));
         
         // Schedule Gemini price fetch every 30 minutes
-        $schedule->command('gemini:fetch-price')->everyThirtyMinutes();
+        $schedule->command('gemini:fetch-price')
+            ->everyThirtyMinutes()
+            ->appendOutputTo(storage_path('logs/scheduler.log'))
+            ->emailOutputOnFailure(env('ADMIN_EMAIL'));
         
         // Schedule Binance price fetch every 30 minutes
-        $schedule->command('binance:fetch-price')->everyThirtyMinutes();
+        $schedule->command('binance:fetch-price')
+            ->everyThirtyMinutes()
+            ->appendOutputTo(storage_path('logs/scheduler.log'))
+            ->emailOutputOnFailure(env('ADMIN_EMAIL'));
     }
 
     /**
