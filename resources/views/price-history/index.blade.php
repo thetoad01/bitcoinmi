@@ -61,7 +61,7 @@
 
         Highcharts.setOptions({
             lang: { thousandsSep: ',' },
-            global: { useUTC: false }
+            global: { useUTC: true }
         });
 
         const chart = Highcharts.chart('chart', {
@@ -76,8 +76,15 @@
                 type: 'datetime',
                 labels: {
                     formatter: function() {
-                        // Timestamps are already in Detroit time
-                        return Highcharts.dateFormat('%l%P', this.value);
+                        // Convert UTC timestamp to America/Detroit time for display
+                        var date = new Date(this.value);
+                        var detroitStr = date.toLocaleTimeString("en-US", {
+                            timeZone: "America/Detroit",
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        return detroitStr;
                     }
                 }
             },
@@ -86,9 +93,20 @@
                 useHTML: true,
                 padding: 0,
                 formatter: function() {
-                    // Timestamps are already in Detroit time
-                    var dateStr = Highcharts.dateFormat('%a %b %e', this.x);
-                    var timeStr = Highcharts.dateFormat('%l%P', this.x);
+                    // Convert UTC timestamp to America/Detroit time for display
+                    var detroitDate = new Date(this.x);
+                    var dateStr = detroitDate.toLocaleDateString("en-US", {
+                        timeZone: "America/Detroit",
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    var timeStr = detroitDate.toLocaleTimeString("en-US", {
+                        timeZone: "America/Detroit",
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
                     
                     return '<table><thead><tr><th class="px-2 py-1 border-bottom bg-primary text-white">' + dateStr + '</th>' +
                         '<th class="px-2 py-1 border-bottom bg-primary text-white text-end">' + timeStr + ' EST/EDT</th></tr></thead><tbody>' +
@@ -103,7 +121,7 @@
         });
 
         // Prepare data as [timestamp, value] pairs for datetime axis
-        // Timestamps are in Detroit time (milliseconds)
+        // Timestamps are UTC (milliseconds), Highcharts converts to local time
         @if($data->isNotEmpty())
             var chartData = {!! json_encode($data->reverse()->values()->map(function($item) {
                 return [(float)$item->timestamp, (float)$item->amount];
