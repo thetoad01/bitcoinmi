@@ -3,7 +3,7 @@
 @section('title', 'Coinbase Price History')
 
 @section('content')
-    <div class="container py-4">
+    <div class="container-fluid py-4">
         <div class="card mb-2">
             <div class="card-body">
                 @if ($spot)

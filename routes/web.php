@@ -21,8 +21,7 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 
 Route::get('/contact', [App\Http\Controllers\ContactController::class, 'index'])->name('contact.index');
 
-// Route::get('/meetup', [App\Http\Controllers\MeetupController::class, 'index'])->name('meetup.index');
-Route::view('/meetup', 'meetup.index')->name('meetup.index');
+Route::get('/meetup', [App\Http\Controllers\MeetupController::class, 'index'])->name('meetup.index');
 Route::get('/meetup/create', [App\Http\Controllers\MeetupController::class, 'create'])->name('meetup.create');
 Route::post('/meetup', [App\Http\Controllers\MeetupController::class, 'store'])->name('meetup.store');
 

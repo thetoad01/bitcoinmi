@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Meetups;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MeetupController extends Controller
@@ -15,19 +13,16 @@ class MeetupController extends Controller
      */
     public function index()
     {
-        $date = Carbon::now()->toDateString();
+        $jsonPath = storage_path('app/meetup-groups.json');
+        $meetupGroups = [];
 
-        $result = Meetups::whereDate('date_time', '>=', $date)
-            ->orderBy('date_time', 'ASC')
-            ->take(10)
-            ->get();
-
-        $result->each(function ($item, $key) {
-            $item->when = Carbon::parse($item->date_time)->toDayDateTimeString();
-        });
+        if (file_exists($jsonPath)) {
+            $jsonContent = file_get_contents($jsonPath);
+            $meetupGroups = json_decode($jsonContent, true) ?? [];
+        }
 
         return view('meetup.index', [
-            'data' => $result
+            'meetupGroups' => $meetupGroups
         ]);
     }
 
