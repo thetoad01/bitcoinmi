@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Clients\BinanceClient;
 use App\Models\BinanceSpotPrice;
+use App\Models\SpotPriceRequest;
 use Illuminate\Http\Request;
 
 class BinancePriceController extends Controller
@@ -18,10 +19,16 @@ class BinancePriceController extends Controller
         $client = new BinanceClient();
         
         // Check if we need to save a new price (only if 5+ minutes since last save)
-        $recentPrice = BinanceSpotPrice::getRecent(self::CACHE_MINUTES);
+        $recentPrice = SpotPriceRequest::getRecent('binance', self::CACHE_MINUTES);
         if (!$recentPrice) {
-            // Fetch from API and save (always saves when hitting API)
-            $recentPrice = $client->fetchAndSave();
+            // Fetch from API and save to SpotPriceRequest
+            $apiData = $client->fetch();
+            if ($apiData && isset($apiData['price'])) {
+                $recentPrice = SpotPriceRequest::create([
+                    'exchange' => 'binance',
+                    'price' => $apiData['price']
+                ]);
+            }
         }
         
         // Get current spot price for display (use saved price if available, otherwise fetch fresh)
@@ -66,7 +73,7 @@ class BinancePriceController extends Controller
             ? $result->first()->price - $average 
             : 0;
 
-        return view('price-history.binance-index', [
+        return view('price-history.binance.index', [
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,

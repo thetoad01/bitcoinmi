@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Clients\GeminiClient;
 use App\Models\GeminiSpotPrice;
+use App\Models\SpotPriceRequest;
 use Illuminate\Http\Request;
 
 class GeminiPriceController extends Controller
@@ -18,16 +19,22 @@ class GeminiPriceController extends Controller
         $client = new GeminiClient();
         
         // Check if we need to save a new price (only if 5+ minutes since last save)
-        $recentPrice = GeminiSpotPrice::getRecent(self::CACHE_MINUTES);
+        $recentPrice = SpotPriceRequest::getRecent('gemini', self::CACHE_MINUTES);
         if (!$recentPrice) {
-            // Fetch from API and save (always saves when hitting API)
-            $recentPrice = $client->fetchAndSave();
+            // Fetch from API and save to SpotPriceRequest
+            $apiData = $client->fetch();
+            if ($apiData && isset($apiData['last'])) {
+                $recentPrice = SpotPriceRequest::create([
+                    'exchange' => 'gemini',
+                    'price' => $apiData['last']
+                ]);
+            }
         }
         
         // Get current spot price for display (use saved price if available, otherwise fetch fresh)
         $spot = null;
         if ($recentPrice) {
-            $spot = $recentPrice->last;
+            $spot = $recentPrice->price;
         } else {
             // Fallback: fetch without saving if save failed but API works
             $spotData = $client->fetch();
@@ -66,7 +73,7 @@ class GeminiPriceController extends Controller
             ? $result->first()->last - $average 
             : 0;
 
-        return view('price-history.gemini-index', [
+        return view('price-history.gemini.index', [
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,

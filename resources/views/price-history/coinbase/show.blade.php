@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Price History')
+@section('title', 'Coinbase Price History - ' . ucfirst($period))
 
 @section('content')
     <div class="container-fluid py-4">
@@ -9,10 +9,16 @@
                 @if ($spot)
                     <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
                 @endif
-                <div>24 Hour Average: ${{ number_format($average, 2) }}</div>
+                @php
+                    $periodText = ucfirst($period) . ' Average';
+                @endphp
+                <div>{{ $periodText }}: ${{ number_format($average, 2) }}</div>
                 @if ($spot)
-                    <div>Spot &plusmn; 24 Hr Avg: ${{ number_format($spot - $average, 2) }}</div>
+                    <div>Spot &plusmn; {{ $periodText }}: ${{ number_format($spot - $average, 2) }}</div>
                 @endif
+                <div class="mt-2">
+                    <small class="text-muted">Viewing: {{ ucfirst($period) }} worth of price history</small>
+                </div>
             </div>
         </div>
         <div class="card">
@@ -22,18 +28,17 @@
                 <table class="table table-sm table-hover">
                     <thead>
                         <tr>
-                            <th>What</th>
-                            <th>Price (USD)</th>
-                            <th>&plusmn; 24 Hr Avg</th>
                             <th>When</th>
+                            <th>Hourly Avg Price (USD)</th>
+                            <th>&plusmn; {{ $periodText }}</th>
+                            <th>What</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($data as $item)
                             <tr>
                                 <td>
-                                    Bitcoin
-                                    ({{ $item->coin }})
+                                    {{ $item->date }}
                                 </td>
                                 <td>
                                     {{ $item->price_description }}
@@ -42,7 +47,7 @@
                                     ${{ number_format($item->amount - $average, 2) }}
                                 </td>
                                 <td>
-                                    {{ $item->date }}
+                                    Bitcoin (BTC)
                                 </td>
                             </tr>
                         @endforeach
@@ -50,7 +55,10 @@
                 </table>
             </div>
         </div>
-        <div>Price is spot price as quoted by Coinbase at approximately the time shown (Eastern Time)</div>
+        @php
+            $periodDescription = $period . ' worth';
+        @endphp
+        <div>Hourly average price based on spot prices quoted by Coinbase (Eastern Time) - showing {{ $periodDescription }} of data</div>
     </div>
 @endsection
 
@@ -69,7 +77,7 @@
             credits: { enabled: false },
             title: '',
             yAxis: {
-                title: { text: 'Spot Price' }
+                title: { text: 'Hourly Average Price' }
             },
             xAxis: {
                 crosshair: true,
@@ -78,13 +86,29 @@
                     formatter: function() {
                         // Convert UTC timestamp to America/Detroit time for display
                         var date = new Date(this.value);
-                        var detroitStr = date.toLocaleTimeString("en-US", {
-                            timeZone: "America/Detroit",
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                        });
-                        return detroitStr;
+                        var period = '{{ $period }}';
+
+                        if (period === 'day') {
+                            // For day view, show just time
+                            return date.toLocaleTimeString("en-US", {
+                                timeZone: "America/Detroit",
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                        } else {
+                            // For week/month/year views, show date and hour
+                            return date.toLocaleDateString("en-US", {
+                                timeZone: "America/Detroit",
+                                month: 'short',
+                                day: 'numeric'
+                            }) + ' ' + date.toLocaleTimeString("en-US", {
+                                timeZone: "America/Detroit",
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            });
+                        }
                     }
                 }
             },
@@ -107,11 +131,11 @@
                         minute: '2-digit',
                         hour12: true
                     });
-                    
+
                     return '<table><thead><tr><th class="px-2 py-1 border-bottom bg-primary text-white">' + dateStr + '</th>' +
                         '<th class="px-2 py-1 border-bottom bg-primary text-white text-end">' + timeStr + ' EST/EDT</th></tr></thead><tbody>' +
                         this.points.map(function(point) {
-                            return '<tr><td class="px-2 py-1">Price:</td>' +
+                            return '<tr><td class="px-2 py-1">Hourly Avg:</td>' +
                                 '<td class="px-2 py-1 text-end"> $' + point.y.toLocaleString() + ' USD </td></tr>';
                         }).join('') +
                         '</tbody></table>';
@@ -129,10 +153,10 @@
         @else
             var chartData = [];
         @endif
-        
+
         if (chartData && chartData.length > 0) {
             chart.addSeries({
-                name: 'Spot Price',
+                name: 'Hourly Average Price',
                 id: 'primary',
                 data: chartData,
             });

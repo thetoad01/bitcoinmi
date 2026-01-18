@@ -27,6 +27,7 @@ Route::post('/meetup', [App\Http\Controllers\MeetupController::class, 'store'])-
 
 Route::get('/news', [App\Http\Controllers\NewsController::class, 'index'])->name('news.index');
 
-Route::get('/price-history', [App\Http\Controllers\CoinbasePriceController::class, 'index'])->name('price.history.index');
+Route::get('/coinbase-price', [App\Http\Controllers\CoinbasePriceController::class, 'index'])->name('coinbase.price.index');
+Route::get('/coinbase-price/{period}', [App\Http\Controllers\CoinbasePriceController::class, 'show'])->name('coinbase.price.show');
 Route::get('/gemini-price', [App\Http\Controllers\GeminiPriceController::class, 'index'])->name('gemini.price.index');
 Route::get('/binance-price', [App\Http\Controllers\BinancePriceController::class, 'index'])->name('binance.price.index');
