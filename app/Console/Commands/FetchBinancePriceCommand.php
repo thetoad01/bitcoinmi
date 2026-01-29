@@ -21,15 +21,20 @@ class FetchBinancePriceCommand extends Command
      */
     protected $description = 'Fetch and save Binance BTC price';
 
+    public function __construct(
+        private BinanceClient $client
+    ) {
+        parent::__construct();
+    }
+
     /**
      * Execute the console command.
      */
     public function handle()
     {
         $this->info('Fetching Binance price...');
-        
-        $client = new BinanceClient();
-        $result = $client->fetchAndSave();
+
+        $result = $this->client->fetchAndSave();
         
         if ($result) {
             $this->info("Successfully saved Binance price: $" . number_format($result->price, 2));

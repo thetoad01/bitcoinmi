@@ -21,15 +21,20 @@ class FetchCoinbasePriceCommand extends Command
      */
     protected $description = 'Fetch and save Coinbase BTC price';
 
+    public function __construct(
+        private CoinbaseClient $client
+    ) {
+        parent::__construct();
+    }
+
     /**
      * Execute the console command.
      */
     public function handle()
     {
         $this->info('Fetching Coinbase price...');
-        
-        $client = new CoinbaseClient();
-        $result = $client->fetchAndSave();
+
+        $result = $this->client->fetchAndSave();
         
         if ($result) {
             $this->info("Successfully saved Coinbase price: $" . number_format($result->amount, 2));

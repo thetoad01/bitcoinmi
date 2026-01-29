@@ -30,4 +30,16 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'binance' => [
+        'endpoint' => env('BINANCE_ENDPOINT', 'https://api.binance.us/api/v3/ticker/price?symbol=BTCUSDT'),
+    ],
+
+    'coinbase' => [
+        'endpoint' => env('COINBASE_ENDPOINT', 'https://api.coinbase.com/v2/prices/BTC-USD/spot'),
+    ],
+
+    'gemini' => [
+        'endpoint' => env('GEMINI_ENDPOINT', 'https://api.gemini.com/v1/pubticker/BTCUSD'),
+    ],
+
 ];

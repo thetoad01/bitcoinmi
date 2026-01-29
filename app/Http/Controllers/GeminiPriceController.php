@@ -14,15 +14,17 @@ class GeminiPriceController extends Controller
      */
     private const CACHE_MINUTES = 5;
 
+    public function __construct(
+        private GeminiClient $client
+    ) {}
+
     public function index()
     {
-        $client = new GeminiClient();
-        
         // Check if we need to save a new price (only if 5+ minutes since last save)
         $recentPrice = SpotPriceRequest::getRecent('gemini', self::CACHE_MINUTES);
         if (!$recentPrice) {
             // Fetch from API and save to SpotPriceRequest
-            $apiData = $client->fetch();
+            $apiData = $this->client->fetch();
             if ($apiData && isset($apiData['last'])) {
                 $recentPrice = SpotPriceRequest::create([
                     'exchange' => 'gemini',
@@ -37,7 +39,7 @@ class GeminiPriceController extends Controller
             $spot = $recentPrice->price;
         } else {
             // Fallback: fetch without saving if save failed but API works
-            $spotData = $client->fetch();
+            $spotData = $this->client->fetch();
             $spot = $spotData['last'] ?? null;
         }
 

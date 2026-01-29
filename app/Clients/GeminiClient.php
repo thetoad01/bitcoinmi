@@ -2,17 +2,20 @@
 
 namespace App\Clients;
 
+use App\Contracts\GeminiPriceRepository;
 use App\Models\GeminiSpotPrice;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Factory as HttpClient;
 use Illuminate\Support\Facades\Log;
 
 class GeminiClient
 {
-    protected $endpoint;
-
-    public function __construct()
-    {
-        $this->endpoint = 'https://api.gemini.com/v1/pubticker/BTCUSD';
+    public function __construct(
+        private string $endpoint,
+        private ?HttpClient $http = null,
+        private ?GeminiPriceRepository $repository = null
+    ) {
+        $this->http ??= app(HttpClient::class);
+        $this->repository ??= app(GeminiPriceRepository::class);
     }
 
     /**
@@ -23,10 +26,8 @@ class GeminiClient
     public function fetchAndSave(): ?GeminiSpotPrice
     {
         try {
-            // 1. Hit the API endpoint
-            $response = Http::get($this->endpoint);
+            $response = $this->http->get($this->endpoint);
 
-            // 2. Confirm response status
             if ($response->status() !== 200) {
                 Log::warning('Gemini API returned non-200 status', [
                     'status' => $response->status(),
@@ -37,9 +38,8 @@ class GeminiClient
 
             $data = $response->json();
 
-            // 3. Confirm we have data with expected structure
-            if (!isset($data['bid']) || 
-                !isset($data['ask']) || 
+            if (!isset($data['bid']) ||
+                !isset($data['ask']) ||
                 !isset($data['last']) ||
                 !isset($data['volume']['BTC']) ||
                 !isset($data['volume']['USD']) ||
@@ -50,8 +50,8 @@ class GeminiClient
                 return null;
             }
 
-            // 4. Write data to table (timestamps will be in America/Detroit as per app timezone)
-            $geminiPrice = GeminiSpotPrice::create([
+            // Timestamps stored in America/Detroit per app timezone.
+            $geminiPrice = $this->repository->create([
                 'bid' => (float) $data['bid'],
                 'ask' => (float) $data['ask'],
                 'last' => (float) $data['last'],
@@ -79,7 +79,7 @@ class GeminiClient
     public function fetch(): ?array
     {
         try {
-            $response = Http::get($this->endpoint);
+            $response = $this->http->get($this->endpoint);
 
             if ($response->status() !== 200) {
                 Log::warning('Gemini API returned non-200 status', [
@@ -91,7 +91,6 @@ class GeminiClient
 
             $data = $response->json();
 
-            // Validate response structure
             if (!isset($data['last'])) {
                 Log::warning('Gemini API response missing expected data structure', [
                     'response' => $data

@@ -13,6 +13,10 @@ class WelcomeController extends Controller
      */
     private const CACHE_MINUTES = 5;
 
+    public function __construct(
+        private CoinbaseClient $client
+    ) {}
+
     public function index()
     {
         // Check if we have a recent price in the database
@@ -20,8 +24,7 @@ class WelcomeController extends Controller
 
         // If no recent price exists, fetch from API and save
         if (!$savedPrice) {
-            $client = new CoinbaseClient();
-            $recentPrice = $client->fetch();
+            $recentPrice = $this->client->fetch();
 
             // Check if API call was successful
             if ($recentPrice && isset($recentPrice['data'])) {

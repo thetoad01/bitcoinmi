@@ -48,6 +48,7 @@
                                 </td>
                                 <td>
                                     Bitcoin (BTC)
+                                    
                                 </td>
                             </tr>
                         @endforeach
