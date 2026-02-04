@@ -50,6 +50,7 @@ class GeminiPriceController extends Controller
 
         // Format the data for display
         $result->each(function ($item, $key) {
+            $item->price = (float) $item->last;
             $item->price_description = '$' . number_format($item->last, 2);
             
             // The created_at is stored in America/Detroit timezone in the database as a string
@@ -75,7 +76,8 @@ class GeminiPriceController extends Controller
             ? $result->first()->last - $average 
             : 0;
 
-        return view('price-history.gemini.index', [
+        return view('price-history.index', [
+            'title' => 'Gemini Price History',
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,

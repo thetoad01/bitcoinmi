@@ -1,16 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Binance Price History')
+@section('title', $title ?? 'Price History')
 
 @section('content')
     <div class="container-fluid py-4">
         <div class="card mb-2">
             <div class="card-body">
-                @if ($spot)
+                @if (isset($spot) && $spot)
                     <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
                 @endif
-                <div>24 Hour Average: ${{ number_format($average, 2) }}</div>
-                @if ($spot)
+                @if (isset($average))
+                    <div>24 Hour Average: ${{ number_format($average, 2) }}</div>
+                @endif
+                @if (isset($spot) && isset($average) && $spot && $average)
                     <div>Spot &plusmn; 24 Hr Avg: ${{ number_format($spot - $average, 2) }}</div>
                 @endif
             </div>
@@ -19,6 +21,7 @@
             <div class="card-body">
                 <div id="chart" class="mb-4"></div>
 
+                @if (isset($data) && $data->isNotEmpty())
                 <table class="table table-sm table-hover">
                     <thead>
                         <tr>
@@ -35,28 +38,39 @@
                                     Bitcoin (BTC)
                                 </td>
                                 <td>
-                                    {{ $item->price_description }}
+                                    {{ $item->price_description ?? 'N/A' }}
                                 </td>
                                 <td>
-                                    ${{ number_format($item->price - $average, 2) }}
+                                    @if (isset($average) && isset($item->price))
+                                        ${{ number_format($item->price - $average, 2) }}
+                                    @else
+                                        N/A
+                                    @endif
                                 </td>
                                 <td>
-                                    {{ $item->date }}
+                                    {{ $item->date ?? 'N/A' }}
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
+                @else
+                    <p>No price data available at this time.</p>
+                @endif
             </div>
         </div>
-        <div>Price is spot price as quoted by Binance at approximately the time shown (Eastern Time)</div>
+        <div>Price information shown in Eastern Time</div>
     </div>
 @endsection
 
 @section('scripts')
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script>
+        @if (isset($average))
         var average = {{ $average }};
+        @else
+        var average = 0;
+        @endif
 
         Highcharts.setOptions({
             lang: { thousandsSep: ',' },
@@ -106,7 +120,7 @@
                         minute: '2-digit',
                         hour12: true
                     });
-                    
+
                     return '<table><thead><tr><th class="px-2 py-1 border-bottom bg-primary text-white">' + dateStr + '</th>' +
                         '<th class="px-2 py-1 border-bottom bg-primary text-white text-end">' + timeStr + ' EST/EDT</th></tr></thead><tbody>' +
                         this.points.map(function(point) {
@@ -121,27 +135,29 @@
 
         // Prepare data as [timestamp, value] pairs for datetime axis
         // Timestamps are UTC (milliseconds), Highcharts converts to local time
-        @if($data->isNotEmpty())
+        @if(isset($data) && $data->isNotEmpty())
             var chartData = {!! json_encode($data->reverse()->values()->map(function($item) {
-                return [(float)$item->timestamp, (float)$item->price];
+                return [(float)$item->timestamp, (float)($item->price ?? 0)];
             })->values()->toArray()) !!};
         @else
             var chartData = [];
         @endif
-        
+
         if (chartData && chartData.length > 0) {
             chart.addSeries({
                 name: 'Spot Price',
                 id: 'primary',
                 data: chartData,
             });
+            @if (isset($average))
             chart.yAxis[0].addPlotLine({
                 value: average,
                 color: 'red',
                 dashStyle: 'longdash'
             });
+            @endif
         } else {
-            console.error('No chart data available');
+            console.log('No chart data available');
         }
     </script>
 @endsection

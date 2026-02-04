@@ -50,6 +50,7 @@ class CoinbasePriceController extends Controller
 
         // Format the data for display
         $result->each(function ($item, $key) {
+            $item->price = (float) $item->amount;
             $item->price_description = '$' . number_format($item->amount, 2);
             
             // The created_at is stored in America/Detroit timezone in the database as a string
@@ -75,7 +76,8 @@ class CoinbasePriceController extends Controller
             ? $result->first()->amount - $average 
             : 0;
 
-        return view('price-history.coinbase.index', [
+        return view('price-history.index', [
+            'title' => 'Coinbase Price History',
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,
@@ -168,7 +170,8 @@ class CoinbasePriceController extends Controller
             ? $result->first()->amount - $average
             : 0;
 
-        return view('price-history.coinbase.show', [
+        return view('price-history.show', [
+            'title' => 'Coinbase Price History',
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,

@@ -76,7 +76,8 @@ class BinancePriceController extends Controller
             ? $result->first()->price - $average 
             : 0;
 
-        return view('price-history.binance.index', [
+        return view('price-history.index', [
+            'title' => 'Binance Price History',
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,

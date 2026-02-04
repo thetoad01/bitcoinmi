@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Coinbase Price History - ' . ucfirst($period))
+@section('title', $title . ' - ' . ucfirst($period))
 
 @section('content')
     <div class="container-fluid py-4">
