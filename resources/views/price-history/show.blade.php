@@ -64,8 +64,9 @@
 @endsection
 
 @section('scripts')
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    @vite('resources/js/charts.js')
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
         var average = {{ $average }};
 
         Highcharts.setOptions({
@@ -169,5 +170,6 @@
         } else {
             console.error('No chart data available');
         }
+    });
     </script>
 @endsection

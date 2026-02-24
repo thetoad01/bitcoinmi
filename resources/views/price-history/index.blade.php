@@ -64,100 +64,104 @@
 @endsection
 
 @section('scripts')
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    @vite('resources/js/charts.js')
     <script>
-        @if (isset($average))
-        var average = {{ $average }};
-        @else
-        var average = 0;
-        @endif
+        document.addEventListener('DOMContentLoaded', function () {
 
-        Highcharts.setOptions({
-            lang: { thousandsSep: ',' },
-            global: { useUTC: true }
-        });
+            @if (isset($average))
+            var average = {{ $average }};
+            @else
+            var average = 0;
+            @endif
 
-        const chart = Highcharts.chart('chart', {
-            chart: { type: 'line' },
-            credits: { enabled: false },
-            title: '',
-            yAxis: {
-                title: { text: 'Spot Price' }
-            },
-            xAxis: {
-                crosshair: true,
-                type: 'datetime',
-                labels: {
+            Highcharts.setOptions({
+                lang: { thousandsSep: ',' },
+                global: { useUTC: true }
+            });
+
+            const chart = Highcharts.chart('chart', {
+                chart: { type: 'line' },
+                credits: { enabled: false },
+                title: '',
+                yAxis: {
+                    title: { text: 'Spot Price' }
+                },
+                xAxis: {
+                    crosshair: true,
+                    type: 'datetime',
+                    labels: {
+                        formatter: function() {
+                            // Convert UTC timestamp to America/Detroit time for display
+                            var date = new Date(this.value);
+                            var detroitStr = date.toLocaleTimeString("en-US", {
+                                timeZone: "America/Detroit",
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                            return detroitStr;
+                        }
+                    }
+                },
+                tooltip: {
+                    shared: true,
+                    useHTML: true,
+                    padding: 0,
                     formatter: function() {
                         // Convert UTC timestamp to America/Detroit time for display
-                        var date = new Date(this.value);
-                        var detroitStr = date.toLocaleTimeString("en-US", {
+                        var detroitDate = new Date(this.x);
+                        var dateStr = detroitDate.toLocaleDateString("en-US", {
+                            timeZone: "America/Detroit",
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        var timeStr = detroitDate.toLocaleTimeString("en-US", {
                             timeZone: "America/Detroit",
                             hour: 'numeric',
                             minute: '2-digit',
                             hour12: true
                         });
-                        return detroitStr;
+
+                        return '<table><thead><tr><th class="px-2 py-1 border-bottom bg-primary text-white">' + dateStr + '</th>' +
+                            '<th class="px-2 py-1 border-bottom bg-primary text-white text-end">' + timeStr + ' EST/EDT</th></tr></thead><tbody>' +
+                            this.points.map(function(point) {
+                                return '<tr><td class="px-2 py-1">Price:</td>' +
+                                    '<td class="px-2 py-1 text-end"> $' + point.y.toLocaleString() + ' USD </td></tr>';
+                            }).join('') +
+                            '</tbody></table>';
                     }
-                }
-            },
-            tooltip: {
-                shared: true,
-                useHTML: true,
-                padding: 0,
-                formatter: function() {
-                    // Convert UTC timestamp to America/Detroit time for display
-                    var detroitDate = new Date(this.x);
-                    var dateStr = detroitDate.toLocaleDateString("en-US", {
-                        timeZone: "America/Detroit",
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric'
-                    });
-                    var timeStr = detroitDate.toLocaleTimeString("en-US", {
-                        timeZone: "America/Detroit",
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-
-                    return '<table><thead><tr><th class="px-2 py-1 border-bottom bg-primary text-white">' + dateStr + '</th>' +
-                        '<th class="px-2 py-1 border-bottom bg-primary text-white text-end">' + timeStr + ' EST/EDT</th></tr></thead><tbody>' +
-                        this.points.map(function(point) {
-                            return '<tr><td class="px-2 py-1">Price:</td>' +
-                                '<td class="px-2 py-1 text-end"> $' + point.y.toLocaleString() + ' USD </td></tr>';
-                        }).join('') +
-                        '</tbody></table>';
-                }
-            },
-            series: []
-        });
-
-        // Prepare data as [timestamp, value] pairs for datetime axis
-        // Timestamps are UTC (milliseconds), Highcharts converts to local time
-        @if(isset($data) && $data->isNotEmpty())
-            var chartData = {!! json_encode($data->reverse()->values()->map(function($item) {
-                return [(float)$item->timestamp, (float)($item->price ?? 0)];
-            })->values()->toArray()) !!};
-        @else
-            var chartData = [];
-        @endif
-
-        if (chartData && chartData.length > 0) {
-            chart.addSeries({
-                name: 'Spot Price',
-                id: 'primary',
-                data: chartData,
+                },
+                series: []
             });
-            @if (isset($average))
-            chart.yAxis[0].addPlotLine({
-                value: average,
-                color: 'red',
-                dashStyle: 'longdash'
-            });
+
+            // Prepare data as [timestamp, value] pairs for datetime axis
+            // Timestamps are UTC (milliseconds), Highcharts converts to local time
+            @if(isset($data) && $data->isNotEmpty())
+                var chartData = {!! json_encode($data->reverse()->values()->map(function($item) {
+                    return [(float)$item->timestamp, (float)($item->price ?? 0)];
+                })->values()->toArray()) !!};
+            @else
+                var chartData = [];
             @endif
-        } else {
-            console.log('No chart data available');
-        }
+
+            if (chartData && chartData.length > 0) {
+                chart.addSeries({
+                    name: 'Spot Price',
+                    id: 'primary',
+                    data: chartData,
+                });
+                @if (isset($average))
+                chart.yAxis[0].addPlotLine({
+                    value: average,
+                    color: 'red',
+                    dashStyle: 'longdash'
+                });
+                @endif
+            } else {
+                console.log('No chart data available');
+            }
+
+        });
     </script>
 @endsection

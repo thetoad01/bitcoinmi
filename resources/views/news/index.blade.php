@@ -11,6 +11,30 @@
             <div class="card-body">
                 <ul class="list-group">
                     <li class="list-group-item" itemscope itemtype="http://schema.org/Article">
+                        <div class="h3" itemprop="headline">Hyperscale Data reaffirms Bitcoin treasury strategy amid Michigan expansion</div>
+                        <div class="pb-2">Hyperscale Data says it will continue its long-term Bitcoin accumulation strategy while advancing data-center and AI infrastructure plans tied to operations in Michigan, framing Bitcoin as a strategic treasury asset alongside core business growth initiatives.</div>
+                        <div>
+                            <a itemprop="url" href="https://www.stocktitan.net/news/GPUS/hyperscale-data-reaffirms-digital-asset-treasury-policy-amid-bitcoin-8vdyjc4v4rru.html" target="_new" class="btn btn-sm btn-success">Read more</a>
+                        </div>
+                        <div class="small">
+                            Soure:  <span itemprop="creator">StockTitan</span>
+                            <span itemprop="dateCreated" class="ps-2">Feb 2, 2026</span>
+                        </div>
+                    </li>
+
+                    <li class="list-group-item" itemscope itemtype="http://schema.org/Article">
+                        <div class="h3" itemprop="headline">Coinbase lawsuit highlights crypto regulatory tensions involving Michigan</div>
+                        <div class="pb-2">Coinbase has filed suit against several states, including Michigan, challenging regulatory approaches that impact crypto-related markets. The coverage presents the case as part of an evolving legal landscape rather than a direct criticism of Bitcoin itself.</div>
+                        <div>
+                            <a itemprop="url" href="https://decrypt.co/352984/coinbase-sues-three-states-over-prediction-market-regulation" target="_new" class="btn btn-sm btn-success">Read more</a>
+                        </div>
+                        <div class="small">
+                            Soure:  <span itemprop="creator">Decrypt</span>
+                            <span itemprop="dateCreated" class="ps-2">Dec 19, 2025</span>
+                        </div>
+                    </li>
+
+                    <li class="list-group-item" itemscope itemtype="http://schema.org/Article">
                         <div class="h3" itemprop="headline">Sterling Heights works on consumer protections for Bitcoin ATMs</div>
                         <div class="pb-2">Officials in Sterling Heights, Michigan, are proposing ordinance changes to regulate and strengthen consumer protections for virtual currency kiosks, including Bitcoin ATMs, to keep residents safer from fraud while retaining access to innovative payment tech.</div>
                         <div>
