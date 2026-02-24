@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
       perPageSelect: [10, 25, 50, 100],
       labels: {
         placeholder: 'Search…',
-        perPage: '{select} per page',
+        perPage: 'per page',
         noRows: 'No records found',
         info: 'Showing {start} to {end} of {rows} entries',
       },

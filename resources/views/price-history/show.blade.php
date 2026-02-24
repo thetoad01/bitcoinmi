@@ -2,25 +2,37 @@
 
 @section('title', $title . ' - ' . ucfirst($period))
 
+@php
+    $delta = $spot - $average;
+    $percent = $average != 0 ? ($delta / $average) * 100 : 0;
+    $class = $delta > 0 ? 'text-success' : ($delta < 0 ? 'text-danger' : 'text-muted');
+    $periodText = ucfirst($period) . ' Average';
+@endphp
+
 @section('content')
     <div class="container-fluid py-4">
-        <div class="card mb-2">
-            <div class="card-body">
+        <div id="price-history-header" class="card mb-2">
+            <div class="card-body d-flex gap-4 flex-wrap pb-0">
                 @if ($spot)
                     <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
                 @endif
-                @php
-                    $periodText = ucfirst($period) . ' Average';
-                @endphp
-                <div>{{ $periodText }}: ${{ number_format($average, 2) }}</div>
-                @if ($spot)
-                    <div>Spot &plusmn; {{ $periodText }}: ${{ number_format($spot - $average, 2) }}</div>
+
+                @if (isset($average))
+                    <div>{{ $periodText }}: ${{ number_format($average, 2) }}</div>
                 @endif
-                <div class="mt-2">
-                    <small class="text-muted">Viewing: {{ ucfirst($period) }} worth of price history</small>
-                </div>
+
+                @if (isset($spot) && isset($average) && $spot && $average)
+                    <div>Spot &plusmn; {{ $periodText }}: 
+                        <span class="{{ $class }}">{{ $delta > 0 ? '+' : '' }}${{ number_format($delta, 2) }}</span>
+                        <span class="{{ $class }}">({{ number_format($percent, 2) }}%)</span>
+                    </div>
+                @endif
+            </div>
+            <div class="ms-3 pb-2">
+                <div class="text-muted">Viewing: {{ ucfirst($period) }} worth of price history</div>
             </div>
         </div>
+
         <div class="card">
             <div class="card-body">
                 <div id="chart" class="mb-4"></div>

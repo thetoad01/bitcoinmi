@@ -2,21 +2,34 @@
 
 @section('title', $title ?? 'Price History')
 
+@php
+    $delta = $spot - $average;
+    $percent = $average != 0 ? ($delta / $average) * 100 : 0;
+    $class = $delta > 0 ? 'text-success' : ($delta < 0 ? 'text-danger' : 'text-muted');
+@endphp
+
 @section('content')
     <div class="container-fluid py-4">
         <div class="card mb-2">
-            <div class="card-body">
+            <div class="card-body d-flex gap-4 flex-wrap">
                 @if (isset($spot) && $spot)
                     <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
                 @endif
+
                 @if (isset($average))
                     <div>24 Hour Average: ${{ number_format($average, 2) }}</div>
                 @endif
+
                 @if (isset($spot) && isset($average) && $spot && $average)
-                    <div>Spot &plusmn; 24 Hr Avg: ${{ number_format($spot - $average, 2) }}</div>
+                    <div>
+                        Spot ± 24 Hr Avg:
+                        <span class="{{ $class }}">{{ $delta > 0 ? '+' : '' }}${{ number_format($delta, 2) }}</span>
+                        <span class="{{ $class }}">({{ number_format($percent, 2) }}%)</span>
+                    </div>
                 @endif
             </div>
         </div>
+
         <div class="card">
             <div class="card-body">
                 <div id="chart" class="mb-4"></div>
