@@ -22,8 +22,8 @@
                 <div id="chart" class="mb-4"></div>
 
                 @if (isset($data) && $data->isNotEmpty())
-                <table class="table table-sm table-hover">
-                    <thead>
+                <table id="price-history-table" class="table table-sm table-hover js-datatable">
+                    <thead class="table-dark">
                         <tr>
                             <th>What</th>
                             <th>Price (USD)</th>
@@ -64,10 +64,9 @@
 @endsection
 
 @section('scripts')
-    @vite('resources/js/charts.js')
+    @vite(['resources/js/charts.js', 'resources/js/datatables.js'])
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-
             @if (isset($average))
             var average = {{ $average }};
             @else
@@ -161,7 +160,6 @@
             } else {
                 console.log('No chart data available');
             }
-
         });
     </script>
 @endsection
