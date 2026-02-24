@@ -11,6 +11,18 @@
             <div class="card-body">
                 <ul class="list-group">
                     <li class="list-group-item" itemscope itemtype="http://schema.org/Article">
+                        <div class="h3" itemprop="headline">Crypto industry builds political war chest, with implications for Michigan</div>
+                        <div class="pb-2">Campaign contributions from crypto-aligned political committees are growing ahead of the November 2026 elections, signaling potential influence on federal and state policy discussions that could affect Michigan’s approach to digital assets and Bitcoin industry interests.</div>
+                        <div>
+                            <a itemprop="url" href="https://mitechnews.com/business-technologies/crypto-industry-builds-massive-political-war-chest-ahead-of-november-what-it-could-mean-for-michigan/" target="_new" class="btn btn-sm btn-success">Read more</a>
+                        </div>
+                        <div class="small">
+                            Soure:  <span itemprop="creator">MI Tech News</span>
+                            <span itemprop="dateCreated" class="ps-2">Feb 15, 2026</span>
+                        </div>
+                    </li>
+
+                    <li class="list-group-item" itemscope itemtype="http://schema.org/Article">
                         <div class="h3" itemprop="headline">Hyperscale Data reaffirms Bitcoin treasury strategy amid Michigan expansion</div>
                         <div class="pb-2">Hyperscale Data says it will continue its long-term Bitcoin accumulation strategy while advancing data-center and AI infrastructure plans tied to operations in Michigan, framing Bitcoin as a strategic treasury asset alongside core business growth initiatives.</div>
                         <div>
