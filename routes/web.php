@@ -31,3 +31,5 @@ Route::get('/coinbase-price', [App\Http\Controllers\CoinbasePriceController::cla
 Route::get('/coinbase-price/{period}', [App\Http\Controllers\CoinbasePriceController::class, 'show'])->name('coinbase.price.show');
 Route::get('/gemini-price', [App\Http\Controllers\GeminiPriceController::class, 'index'])->name('gemini.price.index');
 Route::get('/binance-price', [App\Http\Controllers\BinancePriceController::class, 'index'])->name('binance.price.index');
+
+Route::get('/test', [App\Http\Controllers\TestController::class, 'index'])->name('test.index');
