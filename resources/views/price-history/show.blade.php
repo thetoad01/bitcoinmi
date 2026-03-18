@@ -7,29 +7,51 @@
     $percent = $average != 0 ? ($delta / $average) * 100 : 0;
     $class = $delta > 0 ? 'text-success' : ($delta < 0 ? 'text-danger' : 'text-muted');
     $periodText = ucfirst($period) . ' Average';
+    $currentRoute = Route::currentRouteName();
+    $period = $period ?? 'day';
 @endphp
 
 @section('content')
     <div class="container-fluid py-4">
         <div id="price-history-header" class="card mb-2">
-            <div class="card-body d-flex gap-4 flex-wrap pb-0">
-                @if ($spot)
-                    <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
-                @endif
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <div class="d-flex gap-4 flex-wrap">
+                        @if (isset($spot) && $spot)
+                            <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
+                        @endif
 
-                @if (isset($average))
-                    <div>{{ $periodText }}: ${{ number_format($average, 2) }}</div>
-                @endif
+                        @if (isset($average))
+                            <div>{{ $periodText }}: ${{ number_format($average, 2) }}</div>
+                        @endif
 
-                @if (isset($spot) && isset($average) && $spot && $average)
-                    <div>Spot &plusmn; {{ $periodText }}: 
-                        <span class="{{ $class }}">{{ $delta > 0 ? '+' : '' }}${{ number_format($delta, 2) }}</span>
-                        <span class="{{ $class }}">({{ number_format($percent, 2) }}%)</span>
+                        @if (isset($spot) && isset($average) && $spot && $average)
+                            <div>
+                                Spot &plusmn; {{ $periodText }}:
+                                <span class="{{ $class }}">
+                                    {{ $delta > 0 ? '+' : '' }}${{ number_format($delta, 2) }}
+                                </span>
+                                <span class="{{ $class }}">
+                                    ({{ number_format($percent, 2) }}%)
+                                </span>
+                            </div>
+                        @endif
                     </div>
-                @endif
-            </div>
-            <div class="ms-3 pb-2">
-                <div class="text-muted">Viewing: {{ ucfirst($period) }} worth of price history</div>
+
+                    {{-- Viewing text UNDER numbers --}}
+                    <div class="text-muted mt-2">
+                        Viewing: {{ ucfirst($period) }} worth of price history
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="text-muted">Show:</span>
+                    <select class="form-select" name="period" id="select-period">
+                        <option value="day"   @selected($period === 'day')>1 Day</option>
+                        <option value="week"  @selected($period === 'week')>Week</option>
+                        <option value="month" @selected($period === 'month')>Month</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -182,6 +204,15 @@
             } else {
                 console.error('No chart data available');
             }
+        });
+
+        document.getElementById('select-period').addEventListener('change', function () {
+            const period = this.value;
+
+            const urlTemplate = "{{ route($currentRoute, ':period') }}";
+            const url = urlTemplate.replace(':period', period);
+
+            window.location.href = url;
         });
     </script>
 @endsection

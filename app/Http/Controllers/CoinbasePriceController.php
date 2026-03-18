@@ -176,7 +176,7 @@ class CoinbasePriceController extends Controller
             'average' => $average,
             'diff_from_average' => $diff_from_average,
             'data' => $result,
-            'period' => $period, // Pass period to view for display
+            'period' => $period,
         ]);
     }
 }

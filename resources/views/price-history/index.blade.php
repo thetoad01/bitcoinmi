@@ -6,12 +6,17 @@
     $delta = $spot - $average;
     $percent = $average != 0 ? ($delta / $average) * 100 : 0;
     $class = $delta > 0 ? 'text-success' : ($delta < 0 ? 'text-danger' : 'text-muted');
+    $currentRoute = Route::currentRouteName();
+    $showRoute = str_ends_with($currentRoute, '.index')
+        ? str_replace('.index', '.show', $currentRoute)
+        : $currentRoute;
 @endphp
 
 @section('content')
     <div class="container-fluid py-4">
         <div class="card mb-2">
-            <div class="card-body d-flex gap-4 flex-wrap">
+            <div class="card-body d-flex justify-content-between">
+                <div class="d-flex gap-4">
                 @if (isset($spot) && $spot)
                     <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
                 @endif
@@ -27,6 +32,15 @@
                         <span class="{{ $class }}">({{ number_format($percent, 2) }}%)</span>
                     </div>
                 @endif
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="text-muted">Show:</span>
+                    <select class="form-select" name="period" id="select-period">
+                        <option value="day">1 Day</option>
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -173,6 +187,15 @@
             } else {
                 console.log('No chart data available');
             }
+        });
+
+        document.getElementById('select-period').addEventListener('change', function () {
+            const period = this.value;
+
+            const urlTemplate = "{{ route($showRoute, ':period') }}";
+            const url = urlTemplate.replace(':period', period);
+
+            window.location.href = url;
         });
     </script>
 @endsection
