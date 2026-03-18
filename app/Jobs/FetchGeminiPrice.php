@@ -14,18 +14,16 @@ class FetchGeminiPrice implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        private GeminiClient $client
+    ) {}
 
     /**
      * Execute the job.
      */
     public function handle(): void
     {
-        $client = new GeminiClient();
-        $result = $client->fetchAndSave();
+        $result = $this->client->fetchAndSave();
         
         if ($result) {
             Log::info('Gemini price fetched and saved successfully', [

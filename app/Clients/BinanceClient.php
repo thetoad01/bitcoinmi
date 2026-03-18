@@ -2,17 +2,20 @@
 
 namespace App\Clients;
 
+use App\Contracts\BinancePriceRepository;
 use App\Models\BinanceSpotPrice;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Factory as HttpClient;
 use Illuminate\Support\Facades\Log;
 
 class BinanceClient
 {
-    protected $endpoint;
-
-    public function __construct()
-    {
-        $this->endpoint = 'https://api.binance.us/api/v3/ticker/price?symbol=BTCUSDT';
+    public function __construct(
+        private string $endpoint,
+        private ?HttpClient $http = null,
+        private ?BinancePriceRepository $repository = null
+    ) {
+        $this->http ??= app(HttpClient::class);
+        $this->repository ??= app(BinancePriceRepository::class);
     }
 
     /**
@@ -23,10 +26,8 @@ class BinanceClient
     public function fetchAndSave(): ?BinanceSpotPrice
     {
         try {
-            // 1. Hit the API endpoint
-            $response = Http::get($this->endpoint);
+            $response = $this->http->get($this->endpoint);
 
-            // 2. Confirm response status
             if ($response->status() !== 200) {
                 Log::warning('Binance API returned non-200 status', [
                     'status' => $response->status(),
@@ -37,7 +38,6 @@ class BinanceClient
 
             $data = $response->json();
 
-            // 3. Confirm we have data with expected structure
             if (!isset($data['symbol']) || !isset($data['price'])) {
                 Log::warning('Binance API response missing expected data structure', [
                     'response' => $data
@@ -45,8 +45,8 @@ class BinanceClient
                 return null;
             }
 
-            // 4. Write data to table (timestamps will be in America/Detroit as per app timezone)
-            $binancePrice = BinanceSpotPrice::create([
+            // Timestamps stored in America/Detroit per app timezone.
+            $binancePrice = $this->repository->create([
                 'symbol' => $data['symbol'],
                 'price' => (float) $data['price'],
             ]);
@@ -70,7 +70,7 @@ class BinanceClient
     public function fetch(): ?array
     {
         try {
-            $response = Http::get($this->endpoint);
+            $response = $this->http->get($this->endpoint);
 
             if ($response->status() !== 200) {
                 Log::warning('Binance API returned non-200 status', [
@@ -82,7 +82,6 @@ class BinanceClient
 
             $data = $response->json();
 
-            // Validate response structure
             if (!isset($data['price'])) {
                 Log::warning('Binance API response missing expected data structure', [
                     'response' => $data

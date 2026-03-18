@@ -5,4 +5,15 @@
 @import 'variables';
 
 // Bootstrap
-@import '~bootstrap/scss/bootstrap';
+@import "bootstrap/scss/bootstrap";
+
+/* Force dark header for this table even after Simple-DataTables wraps/adjusts classes */
+#price-history-table thead th {
+    background-color: #212529 !important;
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
+  
+  #price-history-table thead tr {
+    background-color: #212529 !important;
+  }

@@ -2,17 +2,20 @@
 
 namespace App\Clients;
 
+use App\Contracts\CoinbasePriceRepository;
 use App\Models\CoinbaseSpotPrice;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Factory as HttpClient;
 use Illuminate\Support\Facades\Log;
 
 class CoinbaseClient
 {
-    protected $endpoint;
-
-    public function __construct()
-    {
-        $this->endpoint = 'https://api.coinbase.com/v2/prices/BTC-USD/spot';
+    public function __construct(
+        private string $endpoint,
+        private ?HttpClient $http = null,
+        private ?CoinbasePriceRepository $repository = null
+    ) {
+        $this->http ??= app(HttpClient::class);
+        $this->repository ??= app(CoinbasePriceRepository::class);
     }
 
     /**
@@ -23,10 +26,8 @@ class CoinbaseClient
     public function fetchAndSave(): ?CoinbaseSpotPrice
     {
         try {
-            // 1. Hit the API endpoint
-            $response = Http::get($this->endpoint);
+            $response = $this->http->get($this->endpoint);
 
-            // 2. Confirm response status
             if ($response->status() !== 200) {
                 Log::warning('Coinbase API returned non-200 status', [
                     'status' => $response->status(),
@@ -37,9 +38,8 @@ class CoinbaseClient
 
             $data = $response->json();
 
-            // 3. Confirm we have data with expected structure
-            if (!isset($data['data']['base']) || 
-                !isset($data['data']['currency']) || 
+            if (!isset($data['data']['base']) ||
+                !isset($data['data']['currency']) ||
                 !isset($data['data']['amount'])) {
                 Log::warning('Coinbase API response missing expected data structure', [
                     'response' => $data
@@ -47,8 +47,8 @@ class CoinbaseClient
                 return null;
             }
 
-            // 4. Write data to table (timestamps will be in America/Detroit as per app timezone)
-            $coinbasePrice = CoinbaseSpotPrice::create([
+            // Timestamps stored in America/Detroit per app timezone.
+            $coinbasePrice = $this->repository->create([
                 'coin' => $data['data']['base'],
                 'currency' => $data['data']['currency'],
                 'amount' => (float) $data['data']['amount'],
@@ -74,7 +74,7 @@ class CoinbaseClient
     public function fetch(): ?array
     {
         try {
-            $response = Http::get($this->endpoint);
+            $response = $this->http->get($this->endpoint);
 
             if ($response->status() !== 200) {
                 Log::warning('Coinbase API returned non-200 status', [

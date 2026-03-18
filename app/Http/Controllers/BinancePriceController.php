@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Clients\BinanceClient;
 use App\Models\BinanceSpotPrice;
+use App\Models\SpotPriceRequest;
 use Illuminate\Http\Request;
 
 class BinancePriceController extends Controller
@@ -13,15 +14,24 @@ class BinancePriceController extends Controller
      */
     private const CACHE_MINUTES = 5;
 
+    public function __construct(
+        private BinanceClient $client
+    ) {}
+
     public function index()
     {
-        $client = new BinanceClient();
         
         // Check if we need to save a new price (only if 5+ minutes since last save)
-        $recentPrice = BinanceSpotPrice::getRecent(self::CACHE_MINUTES);
+        $recentPrice = SpotPriceRequest::getRecent('binance', self::CACHE_MINUTES);
         if (!$recentPrice) {
-            // Fetch from API and save (always saves when hitting API)
-            $recentPrice = $client->fetchAndSave();
+            // Fetch from API and save to SpotPriceRequest
+            $apiData = $this->client->fetch();
+            if ($apiData && isset($apiData['price'])) {
+                $recentPrice = SpotPriceRequest::create([
+                    'exchange' => 'binance',
+                    'price' => $apiData['price']
+                ]);
+            }
         }
         
         // Get current spot price for display (use saved price if available, otherwise fetch fresh)
@@ -30,7 +40,7 @@ class BinancePriceController extends Controller
             $spot = $recentPrice->price;
         } else {
             // Fallback: fetch without saving if save failed but API works
-            $spotData = $client->fetch();
+            $spotData = $this->client->fetch();
             $spot = $spotData['price'] ?? null;
         }
 
@@ -66,11 +76,105 @@ class BinancePriceController extends Controller
             ? $result->first()->price - $average 
             : 0;
 
-        return view('price-history.binance-index', [
+        return view('price-history.index', [
+            'title' => 'Binance Price History',
             'spot' => $spot,
             'average' => $average,
             'diff_from_average' => $diff_from_average,
             'data' => $result,
+        ]);
+    }
+
+    public function show($period)
+    {
+        // Map period to Carbon time range
+        $periods = [
+            'day' => now()->subDay(),
+            'week' => now()->subWeek(),
+            'month' => now()->subMonth(),
+            'year' => now()->subYear(),
+        ];
+
+        // Default to week if invalid period provided
+        $startDate = $periods[$period] ?? $periods['week'];
+
+        // Check if we need to save a new price (only if 5+ minutes since last save)
+        $recentPrice = SpotPriceRequest::getRecent('binance', self::CACHE_MINUTES);
+        if (!$recentPrice) {
+            // Fetch from API and save to SpotPriceRequest
+            $apiData = $this->client->fetch();
+            if ($apiData && isset($apiData['price'])) {
+                $recentPrice = SpotPriceRequest::create([
+                    'exchange' => 'binance',
+                    'price' => $apiData['price']
+                ]);
+            }
+        }
+
+        // Get current spot price for display (use saved price if available, otherwise fetch fresh)
+        $spot = null;
+        if ($recentPrice) {
+            $spot = $recentPrice->price;
+        } else {
+            // Fallback: fetch without saving if save failed but API works
+            $spotData = $this->client->fetch();
+            $spot = $spotData['price'] ?? null;
+        }
+
+        // Get all price records for the specified period (Binance uses 'price' field)
+        $rawData = BinanceSpotPrice::where('created_at', '>=', $startDate)
+            ->orderBy('created_at')
+            ->get();
+
+        // Group by hour in Detroit timezone and calculate averages
+        $hourlyData = $rawData->groupBy(function ($item) {
+            $dateString = $item->created_at instanceof \Carbon\Carbon
+                ? $item->created_at->format('Y-m-d H:i:s')
+                : (string) $item->created_at;
+
+            // Parse as Detroit timezone and get hour start
+            $detroitTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $dateString, 'America/Detroit');
+            return $detroitTime->format('Y-m-d H:00:00');
+        })->map(function ($hourGroup, $hourKey) {
+            $avgPrice = $hourGroup->avg('price');
+
+            // Create a simple object; use 'amount' for view compatibility (show.blade.php expects it)
+            $hourlyRecord = new \stdClass();
+            $hourlyRecord->hour_start = $hourKey;
+            $hourlyRecord->amount = $avgPrice;
+            $hourlyRecord->price = $avgPrice;
+            $hourlyRecord->data_points = $hourGroup->count();
+            $hourlyRecord->first_timestamp = $hourGroup->first()->created_at;
+
+            $hourlyRecord->price_description = '$' . number_format($avgPrice, 2);
+
+            // Parse the hour_start as Detroit timezone
+            $detroitTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $hourKey, 'America/Detroit');
+
+            $hourlyRecord->date = $detroitTime->toDayDateTimeString();
+
+            // Convert to UTC timestamp for Highcharts
+            $hourlyRecord->timestamp = $detroitTime->setTimezone('UTC')->timestamp * 1000;
+
+            return $hourlyRecord;
+        })->sortBy('hour_start');
+
+        // Convert to collection for consistency with existing code
+        $result = collect($hourlyData->values());
+
+        // Calculate average and difference (using hourly averages)
+        $average = $result->isNotEmpty() ? $result->pluck('amount')->average() : 0;
+        $diff_from_average = $result->isNotEmpty() && $result->first()
+            ? $result->first()->amount - $average
+            : 0;
+
+        return view('price-history.show', [
+            'title' => 'Binance Price History',
+            'spot' => $spot,
+            'average' => $average,
+            'diff_from_average' => $diff_from_average,
+            'data' => $result,
+            'period' => $period,
         ]);
     }
 }

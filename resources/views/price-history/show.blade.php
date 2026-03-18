@@ -1,0 +1,218 @@
+@extends('layouts.app')
+
+@section('title', $title . ' - ' . ucfirst($period))
+
+@php
+    $delta = $spot - $average;
+    $percent = $average != 0 ? ($delta / $average) * 100 : 0;
+    $class = $delta > 0 ? 'text-success' : ($delta < 0 ? 'text-danger' : 'text-muted');
+    $periodText = ucfirst($period) . ' Average';
+    $currentRoute = Route::currentRouteName();
+    $period = $period ?? 'day';
+@endphp
+
+@section('content')
+    <div class="container-fluid py-4">
+        <div id="price-history-header" class="card mb-2">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <div class="d-flex gap-4 flex-wrap">
+                        @if (isset($spot) && $spot)
+                            <div>Current Spot Price: ${{ number_format($spot, 2) }}</div>
+                        @endif
+
+                        @if (isset($average))
+                            <div>{{ $periodText }}: ${{ number_format($average, 2) }}</div>
+                        @endif
+
+                        @if (isset($spot) && isset($average) && $spot && $average)
+                            <div>
+                                Spot &plusmn; {{ $periodText }}:
+                                <span class="{{ $class }}">
+                                    {{ $delta > 0 ? '+' : '' }}${{ number_format($delta, 2) }}
+                                </span>
+                                <span class="{{ $class }}">
+                                    ({{ number_format($percent, 2) }}%)
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Viewing text UNDER numbers --}}
+                    <div class="text-muted mt-2">
+                        Viewing: {{ ucfirst($period) }} worth of price history
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="text-muted">Show:</span>
+                    <select class="form-select" name="period" id="select-period">
+                        <option value="day"   @selected($period === 'day')>1 Day</option>
+                        <option value="week"  @selected($period === 'week')>Week</option>
+                        <option value="month" @selected($period === 'month')>Month</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div id="chart" class="mb-4"></div>
+
+                <table id="price-history-table" class="table table-sm table-hover js-datatable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>When</th>
+                            <th>Hourly Avg Price (USD)</th>
+                            <th>&plusmn; {{ $periodText }}</th>
+                            <th>What</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($data as $item)
+                            <tr>
+                                <td>
+                                    {{ $item->date }}
+                                </td>
+                                <td>
+                                    {{ $item->price_description }}
+                                </td>
+                                <td>
+                                    ${{ number_format($item->amount - $average, 2) }}
+                                </td>
+                                <td>
+                                    Bitcoin (BTC)
+                                    
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @php
+            $periodDescription = $period . ' worth';
+        @endphp
+        <div>Hourly average price based on spot prices quoted by Coinbase (Eastern Time) - showing {{ $periodDescription }} of data</div>
+    </div>
+@endsection
+
+@section('scripts')
+    @vite(['resources/js/charts.js', 'resources/js/datatables.js'])
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var average = {{ $average }};
+
+            Highcharts.setOptions({
+                lang: { thousandsSep: ',' },
+                global: { useUTC: true }
+            });
+
+            const chart = Highcharts.chart('chart', {
+                chart: { type: 'line' },
+                credits: { enabled: false },
+                title: '',
+                yAxis: {
+                    title: { text: 'Hourly Average Price' }
+                },
+                xAxis: {
+                    crosshair: true,
+                    type: 'datetime',
+                    labels: {
+                        formatter: function() {
+                            // Convert UTC timestamp to America/Detroit time for display
+                            var date = new Date(this.value);
+                            var period = '{{ $period }}';
+
+                            if (period === 'day') {
+                                // For day view, show just time
+                                return date.toLocaleTimeString("en-US", {
+                                    timeZone: "America/Detroit",
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true
+                                });
+                            } else {
+                                // For week/month/year views, show date and hour
+                                return date.toLocaleDateString("en-US", {
+                                    timeZone: "America/Detroit",
+                                    month: 'short',
+                                    day: 'numeric'
+                                }) + ' ' + date.toLocaleTimeString("en-US", {
+                                    timeZone: "America/Detroit",
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false
+                                });
+                            }
+                        }
+                    }
+                },
+                tooltip: {
+                    shared: true,
+                    useHTML: true,
+                    padding: 0,
+                    formatter: function() {
+                        // Convert UTC timestamp to America/Detroit time for display
+                        var detroitDate = new Date(this.x);
+                        var dateStr = detroitDate.toLocaleDateString("en-US", {
+                            timeZone: "America/Detroit",
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        var timeStr = detroitDate.toLocaleTimeString("en-US", {
+                            timeZone: "America/Detroit",
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+
+                        return '<table><thead><tr><th class="px-2 py-1 border-bottom bg-primary text-white">' + dateStr + '</th>' +
+                            '<th class="px-2 py-1 border-bottom bg-primary text-white text-end">' + timeStr + ' EST/EDT</th></tr></thead><tbody>' +
+                            this.points.map(function(point) {
+                                return '<tr><td class="px-2 py-1">Hourly Avg:</td>' +
+                                    '<td class="px-2 py-1 text-end"> $' + point.y.toLocaleString() + ' USD </td></tr>';
+                            }).join('') +
+                            '</tbody></table>';
+                    }
+                },
+                series: []
+            });
+
+            // Prepare data as [timestamp, value] pairs for datetime axis
+            // Timestamps are UTC (milliseconds), Highcharts converts to local time
+            @if($data->isNotEmpty())
+                var chartData = {!! json_encode($data->reverse()->values()->map(function($item) {
+                    return [(float)$item->timestamp, (float)$item->amount];
+                })->values()->toArray()) !!};
+            @else
+                var chartData = [];
+            @endif
+
+            if (chartData && chartData.length > 0) {
+                chart.addSeries({
+                    name: 'Hourly Average Price',
+                    id: 'primary',
+                    data: chartData,
+                });
+                chart.yAxis[0].addPlotLine({
+                    value: average,
+                    color: 'red',
+                    dashStyle: 'longdash'
+                });
+            } else {
+                console.error('No chart data available');
+            }
+        });
+
+        document.getElementById('select-period').addEventListener('change', function () {
+            const period = this.value;
+
+            const urlTemplate = "{{ route($currentRoute, ':period') }}";
+            const url = urlTemplate.replace(':period', period);
+
+            window.location.href = url;
+        });
+    </script>
+@endsection
